@@ -3,7 +3,7 @@ import { StyleSheet, Text, View, TextInput, Image, Linking, TouchableOpacity, Al
 import { NavigationContainer, useNavigation } from '@react-navigation/native';
 import { createDrawerNavigator, DrawerContentScrollView, DrawerItemList, DrawerItem } from '@react-navigation/drawer';
 import { createStackNavigator } from '@react-navigation/stack';
-import { Card, Title, Paragraph, Button, Snackbar, Portal, Dialog, Menu, FAB, List, Divider,IconButton} from 'react-native-paper';
+import { Card, Title, Paragraph, Button, Snackbar, Portal, Dialog, Menu, FAB, List, Divider, IconButton } from 'react-native-paper';
 
 import { collection, query, where } from "firebase/firestore";
 import firebase from 'firebase';
@@ -11,7 +11,7 @@ import "firebase/firestore";
 import "firebase/storage";
 
 
-export default function telaReservaUser({ route,navigation }) {
+export default function telaReservaUser({ route, navigation }) {
 	const [refreshDummy, setRefreshDummy] = React.useState(0);
 	const [ReservaUser, setReservaUser] = React.useState([]);
 	const [loading, setLoading] = React.useState(true);
@@ -24,69 +24,72 @@ export default function telaReservaUser({ route,navigation }) {
 
 
 	useEffect(() => {
-		
-		async function getReservaUser(){
-			
-			let doc = await firebase
-			.firestore()
-			.collection('users')
-			.doc(userId)
-			.collection('reservas')
-			.onSnapshot((query) => {
-				
-				const list = [] , ids = [], listee=[];
-				
-				
-				query.forEach((doc) => {
-					
-					let wa= {idee: doc.data().idee}
-					listee.push(wa)
-					setInfo(listee);
-					let text = info.toString();
-					firebase.firestore()
-			.collection('quartos')
-			.where(firebase.firestore.FieldPath.documentId(), '==', text).get()
-			liste.push(doc.data());
-					
-					// aqui tu faz uma segunda query do firebase que pega o nome e preço do quarto
-					  // aí pra não mudar os card tu pode fazer isso:
-					   let obj = {
+
+
+		async function getReservaUser() {
+
+			await firebase
+				.firestore()
+				.collection('users')
+				.doc(userId)
+				.collection('reservas')
+				.onSnapshot((query) => {
+					const list = [], ids = [], listee = [];
+
+
+					query.forEach((doc) => {
+
+
+						/*let quarto = await firebase.firestore()
+							.collection('quartos')
+							.doc(doc.data().id)
+							.get();
+	*/
+						let obj = {
+						
 							inicioReserva: doc.data().inicioReserva,
 							fimReserva: doc.data().fimReserva,
-							preço: liste.preço,
-							nome: liste.nome
-					   }
+							preço: doc.data().preço,
+							urlImg: doc.data().urlImg,
+							nome: doc.data().nome,
+							path: doc.data().path,
+						}
+						//console.log(obj);
+						list.push(obj);
+						ids.push(doc.id)
+						
+						console.log("Teste2");
+						console.log(doc.data().path);
 
-					  // aí colocar esse obj na lista, em vez do doc.data() */
-list.push(obj);
-ids.push(doc.id);
+					});
 
-				})
 				
-				
-				setReservaUser(list);
-				setIds(ids);
-				setLoading(false);
-				
-			});
-			
+
+					setReservaUser(list);
+setIds(ids);
+					setLoading(false);
+					
+
+
+
+				});
+
+
 		}
-
 		getReservaUser();
-		async function getImagemHoteis() {
 
-			const imageRefs = await firebase.storage().ref().listAll();
-			const urls = await Promise.all(imageRefs.items.map((ref) => ref.getDownloadURL()));
-			setArrImagens(urls);
-			setLoading2(false);
+	}, [refreshDummy]);
 
-		}
 
-		getImagemHoteis();
-	}, [refreshDummy])
-	function deletarItem(id,path) {
+
+
+	function deletarItem(id, path) {
 
 		setVisibleDialog(true);
+setVisibleDialog(true);
+console.log("testeeee");
+console.log(info.path);
+console.log(ReservaUser.path);
 		
 		firebase
 			.firestore()
@@ -101,7 +104,8 @@ ids.push(doc.id);
 			}).catch((e) => {
 				alert(e);
 			});
-	
+		
+
 	}
 
 
@@ -110,6 +114,7 @@ ids.push(doc.id);
 		<View style={styles.container}>
 			<StatusBar barStyle="dark-content" hidden={false} backgroundColor="#7e07ad" />
 			<ScrollView style={{ width: Dimensions.get('window').width }} contentContainerStyle={styles.containerScroll}>
+
 				{loading && <>
 					<ActivityIndicator size='large' color="#545454" />
 					<Text>Carregando...</Text>
@@ -117,28 +122,25 @@ ids.push(doc.id);
 				{!loading && ReservaUser.length == 0 && <>
 					<Paragraph>Parece que você ainda não reservou nenhum quarto!</Paragraph>
 				</>}
-				{!loading && ReservaUser.map((p, index) => {
-					var preçoDouble = parseFloat(p.preço)
-					var inicio = String(p.inicioReserva);
-					var fim = String(p.fimReserva);
-					return (
-						<Card style={{ width: 0.9 * Dimensions.get('window').width, marginBottom: 15 }} key={index}>
-							<Card.Content>
-								<Title>{p.nome}</Title>
-								<Card.Cover source={{ uri: p.urlImg }} style={{width: 0.9 * Dimensions.get('window').width}}/>
-								<Paragraph>preço: {preçoDouble.toFixed(2)}</Paragraph>
-								<Paragraph>Inicio da reserva: {inicio}</Paragraph>
-								<Paragraph>Fim da reserva: {fim}</Paragraph>
+				
+				{!loading && ReservaUser.map((item, index) =>
+				(<>
+					<Card style={{ width: 0.9 * Dimensions.get('window').width, marginBottom: 15 }} key={index}>
+						<Card.Content>
+							<Title>{item.nome}</Title>
+							<Card.Cover source={{ uri: item.urlImg }} style={{ width: 0.9 * Dimensions.get('window').width }} />
+							<Paragraph>preço: R${parseFloat(item.preço).toFixed(2)}</Paragraph>
+							<Paragraph>Inicio da reserva: {String(item.inicioReserva)}</Paragraph>
+							<Paragraph>Fim da reserva: {String(item.fimReserva)}</Paragraph>
 
-							</Card.Content>
-							<Card.Actions>
-							<IconButton icon="pencil" color="#4592a0" size={25} onPress={() => navigation.navigate("EditarReservaUser", { update: true, id: ids[index], obj: p })}></IconButton>
-								<Button color='#d4161d' onPress={() => deletarItem(ids[index])}>Remover</Button>
-							</Card.Actions>
-						</Card>
-
-					);
-				})}{!loading && <>
+						</Card.Content>
+						<Card.Actions>
+							<IconButton icon="pencil" color="#4592a0" size={25} onPress={() => navigation.navigate("EditarReservaUser", { update: true, id: ids[index], obj: item })}></IconButton>
+							<Button color='#d4161d' onPress={() => deletarItem(ids[index],item.path)}>Remover</Button>
+						</Card.Actions>
+					</Card>
+				</>)
+				)}{!loading && !loading1 && <>
 					<Portal>
 						<Dialog visible={visibleDialog} dismissable={false}>
 							<Dialog.Content>

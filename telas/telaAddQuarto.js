@@ -22,7 +22,7 @@ const [image, setImage] = useState(null);
 	const [preço, setPreço] = useState('');
 	const [visibleDialog, setVisibleDialog] = useState(false);
 	const [visibleMenu, setVisibleMenu] = useState(false);
-	const [categoria, setCategoria] = useState('Planta');
+	const [categoria, setCategoria] = useState('praia');
 
 	useEffect(() => {
 

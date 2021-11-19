@@ -7,6 +7,7 @@ import { Card, Title, Paragraph, Button, Snackbar, Portal, Dialog, Menu, FAB, Li
 import MapView, { Marker } from 'react-native-maps';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import telaAddQuarto from "../telas/telaAddQuarto.js";
+import * as ImagePicker from "expo-image-picker";
 
 import firebase from 'firebase';
 import "firebase/firestore";
@@ -17,79 +18,179 @@ import { logout } from "../firebase/firebaseMethods.js";
 import logo from "./assets/logo.png";
 
 export default function telaEditarReserva({ route, navigation }) {
-    const Drawer = createDrawerNavigator();
-    const Stack = createStackNavigator();
 
-   
+
     const [inicioReserva, setinicioReserva] = React.useState(new Date(2021, 0, 1, 15, 0, 0));
-	const [fimReserva, setfimReserva] = React.useState(new Date(2021, 0, 1, 15, 0, 0));
-    const [image, setImage] = useState(route.params.obj.inicioReserva);
-	const [nome, setNome] = useState(route.params.obj.nome);
-	const [desc, setDesc] = useState(route.params.obj.fimReserva);
-	const [preço, setPreço] = useState(route.params.obj.preço);
+    const [fimReserva, setfimReserva] = React.useState(new Date(2021, 0, 1, 15, 0, 0));
+    const [image, setImage] = useState(route.params.obj.urlImg);
+    const [categoria, setCategoria] = useState(route.params.obj.categoria);
+    const [nome, setNome] = React.useState(route.params.obj.nome);
+    const [path, sete] = React.useState(route.params.obj.nome);
+    const [desc, setDesc] = React.useState(route.params.obj.fimReserva);
+    const [preço, setPreço] = React.useState(route.params.obj.preço);
     const [visible, setVisible] = React.useState(false);
     const [visible2, setVisible2] = React.useState(false);
     const [visibleDialog, setVisibleDialog] = React.useState(false);
     const [visibleDialog2, setVisibleDialog2] = React.useState(false);
     const userId = firebase.auth().currentUser.uid;
     const [info, setInfo] = React.useState([]);
+    const [changedImage, setChangedImage] = React.useState(false);
+    const [visibleMenu, setVisibleMenu] = React.useState(false);
+    var storage = firebase.storage();
     useEffect(() => {
-    async function getInfo(){
-			
-        let doc = await firebase
-        .firestore()
-        .collection('quartos')
-        .doc(route.params.id)
-        .get();
-        
-        if(doc.exists){
+        async function getPermissions() {
+            const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+            if (status !== 'granted') {
+                navigation.goBack();
+            }
+        }
+
+        getPermissions();
+
+        getInfo();
+
+    }, []);
+    async function getInfo() {
+
+
+        let doc = await firebase.firestore()
+            .collection('users')
+            .doc(userId)
+            .collection('reservas')
+            .doc(route.params.id)
+            .get();
+
+        if (doc.exists) {
             setLoading(false);
             setInfo(doc.data());
         }
     }
-    
-    getInfo();
-    
-}, []);
 
-function onChange(event, selectedDate){
-    
-    const currentDate = selectedDate || inicioReserva;
-    setVisible(false);
-    setinicioReserva(currentDate);
-    
-};
-function onChange2(event, selectedDate){
-    
-    const currentDate = selectedDate || fimReserva;
-    setVisible2(false);
-    setfimReserva(currentDate);
-    
-};
-    async function salvar() {
-        let strHora = inicioReserva.getDate() + '/' + String(inicioReserva.getMonth()+ 1) +'/' + inicioReserva.getFullYear(); 
-		let strFim= fimReserva.getDate() + '/' + String(fimReserva.getMonth()+ 1) +'/' + fimReserva.getFullYear();
-        let doc = await firebase;
-        firebase
-		.firestore()
-		.collection('users')
-		.doc(userId)
-		.collection('reservas')
-		.doc(route.params.id)
-            .update({
-                nome: nome,
-                fimReserva: strFim,
-                inicioReserva: strHora,
-            }).then(() => {
-                setVisibleDialog(true);
-            });
+    const pickImage = async () => {
+
+        let result = await ImagePicker.launchImageLibraryAsync({
+            mediaTypes: ImagePicker.MediaTypeOptions.All,
+            quality: 1,
+        });
+
+        if (!result.cancelled) {
+            setImage(result.uri);
+            setChangedImage(true);
+        }
+    };
+
+    function verificarEntradas() {
+        return (image !== null && nome !== '' && categoria !== '' && fimReserva !== '' && inicioReserva !== '' && preço !== '');
     }
-    function a(){
-		navigation.goBack();
-		setVisibleDialog(false);
-	}
+
+    function onChange(event, selectedDate) {
+
+        const currentDate = selectedDate || inicioReserva;
+        setVisible(false);
+        setinicioReserva(currentDate);
+
+    };
+    function onChange2(event, selectedDate) {
+
+        const currentDate = selectedDate || fimReserva;
+        setVisible2(false);
+        setfimReserva(currentDate);
+
+    };
+    async function salvar() {
+        setVisibleDialog(true);
+        let strHora = inicioReserva.getDate() + '/' + String(inicioReserva.getMonth() + 1) + '/' + inicioReserva.getFullYear();
+        let strFim = fimReserva.getDate() + '/' + String(fimReserva.getMonth() + 1) + '/' + fimReserva.getFullYear();
+        if (changedImage) {
+
+            let i = await fetch(image);
+            let file = await i.blob();
+            let n = new Date();
+            let dateTime = n.getFullYear() + '_' + (n.getMonth() + 1) + '_' + n.getDate() + '_' +
+                n.getHours() + '_' + n.getMinutes() + '_' + n.getSeconds();
+            let path =  'reserva' + userId + '/' + dateTime;
+
+            let doc = firebase.storage().ref()
+                .child(path)
+                .put(file)
+                .then((snapshot) => {
+                    snapshot.ref.getDownloadURL().then((u) => {
+                        firebase.storage().ref()
+                            .child(info.path)
+                            .delete();
+console.log("testeeee");
+console.log(info.path);
+                        firebase.firestore()
+                            .collection('users')
+                            .doc(userId)
+                            .collection('reservas')
+                            .doc(route.params.id)
+                            .set({
+                                nome: nome,
+                                fimReserva: strFim,
+                                inicioReserva: strHora,
+                                preço: preço,
+                                categoria: categoria,
+                                urlImg: u,
+                                path: path
+                            })
+                           
+
+
+                    })
+                })
+        } else {
+            let doc = await firebase;
+            firebase
+                .firestore()
+                .collection('users')
+                .doc(userId)
+                .collection('reservas')
+                .doc(route.params.id)
+                .update({
+                    nome: nome,
+                    fimReserva: strFim,
+                    inicioReserva: strHora,
+                    preço: preço,
+                    categoria: categoria
+                }).then(() => {
+                    setVisibleDialog(true);
+                });
+        }
+    }
+    function a() {
+        navigation.goBack();
+        setVisibleDialog(false);
+    }
     return (
         <View style={styles.container}>
+            <TouchableOpacity onPress={() => pickImage()}>
+                <Image source={image ? { uri: image } : placeholder} resizeMode="contain" style={{ width: 100, height: 100 }} />
+            </TouchableOpacity>
+            <TextInput
+                style={styles.txtInput}
+                placeholder='Nome do quarto'
+                onChangeText={setNome}
+                value={nome}
+                underlineColor='#d4161d'
+            />
+
+            <TextInput
+                style={styles.txtInput}
+                placeholder='Preço do quarto'
+                onChangeText={setPreço}
+                value={preço}
+                underlineColor='#d4161d'
+                keyboardType={'numeric'}
+            />
+            <Menu
+                visible={visibleMenu}
+                onDismiss={() => setVisibleMenu(false)}
+                anchor={<Button mode='contained' onPress={() => setVisibleMenu(true)}>{categoria}</Button>}
+            >
+                <Menu.Item onPress={() => { setCategoria('praia'); setVisibleMenu(false) }} title="Praia" />
+                <Menu.Item onPress={() => { setCategoria('campo'); setVisibleMenu(false) }} title="Campo" />
+            </Menu>
             <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', marginBottom: 15, marginTop: 15, marginLeft: 15, marginRight: 15 }}>
                 <Text>Data do inicio da reserva: </Text>
                 <Button onPress={() => setVisible(true)}>Selecionar</Button>
@@ -110,18 +211,18 @@ function onChange2(event, selectedDate){
                     onChange={onChange2}
                 />}
             </View>
-            <Button mode='contained' style={{marginTop: 15, marginBottom: 15}} onPress={() =>salvar()}>salvar</Button>
-			<Button mode='contained' style={{marginTop: 15, marginBottom: 15}} onPress={() => navigation.goBack()}>voltar</Button>
-			<Portal>
-				<Dialog visible={visibleDialog} dismissable={true}>
-			
-					<Dialog.Content>
-						<Paragraph>Item salvo com sucesso!</Paragraph>
-						<Button onPress={() => a() }>Voltar</Button>
-					</Dialog.Content>
-					
-				</Dialog>
-			</Portal>
+            <Button mode='contained' style={{ marginTop: 15, marginBottom: 15 ,backgroundColor: verificarEntradas() ? 'blue' : 'gray' }} onPress={() => salvar()} disabled={!verificarEntradas()}>salvar</Button>
+            <Button mode='contained' style={{ marginTop: 15, marginBottom: 15 }} onPress={() => navigation.goBack()}>voltar</Button>
+            <Portal>
+                <Dialog visible={visibleDialog} dismissable={true}>
+
+                    <Dialog.Content>
+                        <Paragraph>Item salvo com sucesso!</Paragraph>
+                        <Button onPress={() => a()}>Voltar</Button>
+                    </Dialog.Content>
+
+                </Dialog>
+            </Portal>
         </View>
     );
 

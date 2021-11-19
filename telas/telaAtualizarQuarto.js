@@ -72,8 +72,11 @@ export default function telaAtualizarQuarto({ route, navigation }){
 				.child(path)
 				.put(file)
 				.then((snapshot) => {
-					snapshot.ref.getDownloadURL().then((u) => {
-						
+					snapshot.ref.getDownloadURL().then((url) => {
+						firebase.storage().ref()
+							.child(route.params.obj.path)
+							.delete();
+							
 						firebase.firestore()
 							.collection('quartos')
 							.doc(route.params.id)
@@ -82,13 +85,11 @@ export default function telaAtualizarQuarto({ route, navigation }){
 								descrição: desc,
 								preço: preço,
 								categoria: categoria,
-								urlImg: u,
+								urlImg: url,
 								path: path
 							})
 
-						firebase.storage().ref()
-							.child(route.params.obj.path)
-							.delete()
+						
 					})
 				})
 		}else{
