@@ -122,13 +122,16 @@ export default function telaReserva({ navigation }) {
 	function favoritar(p,index) {
 
 		let str = 'Q' + String(count + 1).padStart(3, '0');
+		let n = new Date();
+		let dateTime = n.getFullYear() + '_' + (n.getMonth() + 1) + '_' + n.getDate() + '_' +
+			n.getHours() + '_' + n.getMinutes() + '_' + n.getSeconds();
 
 		firebase
 			.firestore()
 			.collection('users')
 			.doc(userId)
 			.collection('favoritos')
-			.doc(geradorDeId(8))
+			.doc(dateTime)
 			.set({
 				
 				nome: p.nome,
@@ -162,7 +165,7 @@ export default function telaReserva({ navigation }) {
 								<View style={{ flex: 0.7, alignItems: 'flex-start' }}>
 									<Button color='#00bfff' onPress={() => navigation.navigate('Detalhes', { id: ids[index], urlImg: p.urlImg })}>Detalhes</Button>
 									<Button color='#00bfff' onPress={() => navigation.navigate('Reservar', { id: ids[index], urlImg: p.urlImg })}>Reservar</Button>
-									<Button color='#00bfff' onPress={() => favoritar(index)}>Favoritar</Button>
+									<Button color='#00bfff' onPress={() => favoritar(hoteis[index])}>Favoritar</Button>
 								</View>
 								<View style={{ flex: 0.3, flexDirection: 'row', alignItems: 'flex-end', justifyContent: 'center' }}>
 									<IconButton icon="pencil" color="#4592a0" size={25} onPress={() => navigation.navigate("AtualizarQuarto", { update: true, id: ids[index], obj: p })}></IconButton>
