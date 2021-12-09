@@ -115,11 +115,8 @@ export default function telaEditarReserva({ route, navigation }) {
                 .put(file)
                 .then((snapshot) => {
                     snapshot.ref.getDownloadURL().then((u) => {
-                        firebase.storage().ref()
-                            .child(info.path)
-                            .delete();
-console.log("testeeee");
-console.log(info.path);
+                        
+
                         firebase.firestore()
                             .collection('users')
                             .doc(userId)
@@ -134,7 +131,9 @@ console.log(info.path);
                                 urlImg: u,
                                 path: path
                             })
-                           
+                            firebase.storage().ref()
+                            .child(info.path)
+                            .delete();
 
 
                     })
